@@ -118,9 +118,9 @@ class ApiClient {
 
   verifyEmail(token) {
     return this.request('/auth/verify-email/', {
-      method: 'GET',
+      method: 'POST',
       auth: false,
-      params: { token },
+      body: { token },
     });
   }
 

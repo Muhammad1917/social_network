@@ -1,6 +1,6 @@
 from datetime import timedelta
 from pathlib import Path
-
+import os
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = 'django-insecure-!3eb1ehmm0#qqks#@^cxa&0!x*k-6#^_4(5hke-jasc)+@l9)t'
@@ -123,3 +123,6 @@ STATIC_URL = 'static/'
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 DEFAULT_FROM_EMAIL = 'noreply@socialnetwork.local'
 FRONTEND_URL = 'http://localhost:5173'
+
+MEDIA_URL = "/media/"
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')

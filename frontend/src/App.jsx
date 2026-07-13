@@ -5,7 +5,9 @@ import RegisterPage from './features/auth/RegisterPage';
 import ForgotPasswordPage from './features/auth/ForgotPasswordPage';
 import ResetPasswordPage from './features/auth/ResetPasswordPage';
 import VerifyEmailPage from './features/auth/VerifyEmailPage';
+import ProfileCard from './features/profile/ProfileCard' ;
 import { Button } from './components/ui/button';
+import EditProfile from './features/profile/EditProfile' ;
 
 function HomePage() {
   const { user, logout } = useAuth();
@@ -48,6 +50,10 @@ function App() {
           <Route path="/reset-password" element={<ResetPasswordPage />} />
           <Route path="/verify-email" element={<VerifyEmailPage />} />
           <Route path="*" element={<Navigate to="/" replace />} />
+          
+          <Route path="profile" element={<ProfileCard />} />
+          <Route path="edit_profile" element={<EditProfile />} />
+
         </Routes>
       </AuthProvider>
     </BrowserRouter>

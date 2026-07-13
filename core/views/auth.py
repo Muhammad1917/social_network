@@ -52,8 +52,7 @@ class RegisterView(APIView):
 class VerifyEmailView(APIView):
     permission_classes = [AllowAny]
 
-    def get(self, request):
-        token = request.query_params.get('token')
+    def _verify(self, token):
         if not token:
             return Response({'detail': 'Token is required.'}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -71,6 +70,12 @@ class VerifyEmailView(APIView):
         verification_token.delete()
 
         return Response({'detail': 'Email verified successfully. You can now log in.'})
+
+    def get(self, request):
+        return self._verify(request.query_params.get('token'))
+
+    def post(self, request):
+        return self._verify(request.data.get('token'))
 
 
 class LoginView(APIView):

@@ -34,9 +34,11 @@ class AuthTests(TestCase):
             response = self.client.post(self.register_url, self.user_data, format='json')
         return response
 
-    def _verify_user(self, user):
+    def _verify_user(self, user, method='post'):
         token = EmailVerificationToken.objects.get(user=user)
-        return self.client.get(f'{self.verify_url}?token={token.token}')
+        if method == 'get':
+            return self.client.get(f'{self.verify_url}?token={token.token}')
+        return self.client.post(self.verify_url, {'token': str(token.token)}, format='json')
 
     def test_register_creates_inactive_user(self):
         response = self._register_user()
