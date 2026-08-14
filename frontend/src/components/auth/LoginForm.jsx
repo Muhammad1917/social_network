@@ -19,6 +19,7 @@ import { useNavigate, Link as RouterLink } from "react-router-dom";
 import { useForm } from "react-hook-form";
 
 import authApi from "../../api/authApi";
+import { useAuthStore } from "@/src/store/authStore";
 
 export default function LoginForm() {
     const Navigate = useNavigate()
@@ -49,7 +50,7 @@ export default function LoginForm() {
         console.log("Submitted Data:", formData);
 
         setLoading(true);
-
+    
         try {
 
             /**
@@ -63,7 +64,7 @@ export default function LoginForm() {
                 email: formData.identifier,
                 password: formData.password,
             });
-
+            const username = useAuthStore.getState().username;
             console.log("Login Response:", response);
 
             setSnackbar({
@@ -85,7 +86,7 @@ export default function LoginForm() {
              * Navigate to dashboard/feed/profile.
              */
             
-            Navigate("/Not_exist_user")
+            Navigate(`/profile/${username}`)
         } catch (error) {
 
             console.error(error);
