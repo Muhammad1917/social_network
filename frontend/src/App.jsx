@@ -28,6 +28,8 @@ import CreatePost from './features/post/CreatePost';
 import ProfilePage from './features/profile/ProfilePage';
 import SearchPage from './features/search/SearchPage';
 import SearchBar from './components/search/SearchBar';
+import LandingPage from './features/landing/LandingPage';
+
 
 function HomePage() {
   // const { user, logout } = useAuth();
@@ -88,7 +90,7 @@ function App() {
               {/* <AuthProvider> */}
               
               <Routes>
-                    <Route path="/" element={<HomePage />} />
+                    <Route path="/" element={<LandingPage />} />
                     <Route path="/login" element={<Login />} />
                     <Route path="/register" element={<Register />} />
                     <Route element={<MainLayout/>}>
