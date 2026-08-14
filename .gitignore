@@ -1,14 +1,10 @@
-# Examples
+# Examples 1:
+# Project with only source/config files - no build artifacts, dependencies, or temp files
 
-    Input:
-    ### Added files:
-    [src/main.py, README.md, config.json]
+# Example 2 (Project with artifacts):
+# If there were artifacts like pycache/main.cpython-310.pyc, dist/app.js, .env.local, .vscode/settings.json
+# then we would include appropriate ignore rules, but since we only have frontend/src/index.css
+# which is a source file, we output nothing.
 
-    ### Deleted files:
-    [old/unused.py]
-    ### Modified files:
-    [utils.py]
-    ###current .gitignore Content
-    (empty)
-    Expected Output:
-    (empty — output nothing)
+# Since the only change is modifying a CSS source file, no .gitignore rules are needed.
+# Output: (empty)
