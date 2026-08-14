@@ -6,7 +6,7 @@ import {
 
 
 import useInfinitePosts from "../../hooks/useInfinitePosts";
-import PostDisplay from "../../features/post/PostDisplay";
+import PostDisplay from "../../features/post/postDisplay";
 
 
 
