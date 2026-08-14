@@ -1,14 +1,5 @@
-import {
-    Box,
-    IconButton
-} from "@mui/material";
-
-import DeleteIcon from "@mui/icons-material/Delete";
-
-import {
-    useEffect,
-    useState
-} from "react";
+import { motion } from "framer-motion";
+import { X } from "lucide-react";
 
 
 export default function MediaPreview({
@@ -17,63 +8,30 @@ export default function MediaPreview({
 }){
 
 
-    const [previews,setPreviews]=useState([]);
-
-
-    useEffect(()=>{
-
-
-        const generated = files.map(file=>({
-
-            file,
-
-            url:URL.createObjectURL(file)
-
-        }));
-
-
-        setPreviews(generated);
-
-
-
-        return ()=>{
-
-            generated.forEach(item=>
-                URL.revokeObjectURL(item.url)
-            );
-
-        }
-
-
-    },[files]);
-
+    const previews = files.map(file => ({
+        file,
+        url: URL.createObjectURL(file)
+    }));
 
 
     return (
 
-        <Box
-            sx={{
-                display:"grid",
-                gridTemplateColumns:{
-                    xs:"1fr",
-                    sm:"repeat(2,1fr)",
-                    md:"repeat(3,1fr)"
-                },
-                gap:2
-            }}
+        <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4"
         >
 
         {
             previews.map((item,index)=>(
 
-                <Box
+                <motion.div
                     key={index}
-                    sx={{
-                        position:"relative",
-                        aspectRatio:"1",
-                        overflow:"hidden",
-                        borderRadius:2
-                    }}
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: index * 0.1 }}
+                    className="relative aspect-square overflow-hidden rounded-2xl shadow-lg group"
                 >
 
                 {
@@ -81,50 +39,39 @@ export default function MediaPreview({
 
                     ?
 
-                    <Box
-                        component="img"
+                    <img
                         src={item.url}
-                        sx={{
-                            width:"100%",
-                            height:"100%",
-                            objectFit:"cover"
-                        }}
+                        alt="preview"
+                        className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
                     />
 
                     :
 
-                    <Box
-                        component="video"
+                    <video
                         src={item.url}
                         controls
-                        sx={{
-                            width:"100%",
-                            height:"100%"
-                        }}
+                        className="w-full h-full object-cover"
                     />
 
                 }
 
 
-                <IconButton
+                <motion.button
                     onClick={()=>onRemove(index)}
-                    sx={{
-                        position:"absolute",
-                        right:5,
-                        top:5,
-                        bgcolor:"white"
-                    }}
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.9 }}
+                    className="absolute top-2 right-2 p-2 bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-full shadow-lg hover:bg-red-500 hover:text-white transition-colors duration-300"
                 >
-                    <DeleteIcon/>
-                </IconButton>
+                    <X className="w-4 h-4" />
+                </motion.button>
 
 
-                </Box>
+                </motion.div>
 
             ))
         }
 
-        </Box>
+        </motion.div>
 
     )
 }

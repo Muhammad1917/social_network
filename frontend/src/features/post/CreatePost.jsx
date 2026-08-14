@@ -75,20 +75,16 @@ export default function CreatePost(){
 
 
     return (
-
-        <PostForm
-
-            onSubmit={
-                mutation.mutate
-            }
-
-
-            onCancel={()=>navigate(-1)}
-            sx={{maxWidth: 700,
-                mx: "auto",}}
-
-        />
-
+        <div className="min-h-screen bg-gradient-to-br from-slate-50 via-purple-50 to-blue-50 dark:from-gray-900 dark:via-purple-950 dark:to-gray-900 py-12 px-4 sm:px-6 lg:px-8">
+            <div className="max-w-3xl mx-auto">
+                <PostForm
+                    onSubmit={
+                        mutation.mutate
+                    }
+                    onCancel={()=>navigate(-1)}
+                />
+            </div>
+        </div>
     )
 
 }
