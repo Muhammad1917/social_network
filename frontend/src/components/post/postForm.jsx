@@ -135,7 +135,7 @@ export default function PostForm({
                     >
                         <Camera className="w-8 h-8 text-white" />
                     </motion.div>
-                    <h2 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
+                    <h2 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-black-600 to-blue-600 bg-clip-text text-transparent">
                         Create Post
                     </h2>
                     <p className="text-gray-500 dark:text-gray-400 mt-2 text-sm sm:text-base">

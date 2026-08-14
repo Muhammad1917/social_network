@@ -217,7 +217,7 @@ export default function LandingPage() {
                             ) : (
                                 <button
                                     onClick={() => navigate("/explore")}
-                                    className="group relative overflow-hidden rounded-full bg-primary px-8 py-3.5 text-base font-medium text-primary-foreground transition-all hover:bg-primary/90 hover:shadow-lg"
+                                    className="group relative overflow-hidden rounded-full bg-primary mt-8 px-8 py-3.5 text-base font-medium text-primary-foreground transition-all hover:bg-primary/90 hover:shadow-lg"
                                 >
                                     Go to Explore
                                     <span className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/20 to-transparent transition-transform group-hover:translate-x-full" />
