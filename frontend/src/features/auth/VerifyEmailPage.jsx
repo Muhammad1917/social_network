@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import api from '../../api/client';
+
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card';
 
 export default function VerifyEmailPage() {
@@ -9,19 +9,7 @@ export default function VerifyEmailPage() {
   const [status, setStatus] = useState('verifying');
   const [errorMsg, setErrorMsg] = useState('');
 
-  useEffect(() => {
-    if (!token) {
-      setStatus('missing');
-      return;
-    }
-    api.verifyEmail(token)
-      .then(() => setStatus('success'))
-      .catch((err) => {
-        setStatus('error');
-        setErrorMsg(err.message);
-      });
-  }, [token]);
-
+  
   return (
     <div className="mx-auto mt-20 grid w-full max-w-sm gap-4">
       <Card>

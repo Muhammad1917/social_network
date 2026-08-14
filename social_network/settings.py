@@ -1,10 +1,13 @@
 from datetime import timedelta
 from pathlib import Path
 import os
+from dotenv import load_dotenv
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = 'django-insecure-!3eb1ehmm0#qqks#@^cxa&0!x*k-6#^_4(5hke-jasc)+@l9)t'
 
+
+load_dotenv(BASE_DIR / ".env", override=True)
 DEBUG = True
 
 ALLOWED_HOSTS = []
@@ -30,13 +33,19 @@ REST_FRAMEWORK = {
     "PAGE_SIZE": 10,
     "DEFAULT_AUTHENTICATION_CLASSES": [
         "rest_framework_simplejwt.authentication.JWTAuthentication",
+        # 'rest_framework.authentication.TokenAuthentication',
     ],
     "DEFAULT_PERMISSION_CLASSES": [
         "rest_framework.permissions.IsAuthenticated",
     ],
 }
-
+# DJOSER = {
+#     "SERIALIZERS": {
+#         "current_user": "accounts.serializers.MyUserSerializer",
+#     }
+# }
 SIMPLE_JWT = {
+    'AUTH_HEADER_TYPES': ("JWT",),
     "ACCESS_TOKEN_LIFETIME": timedelta(minutes=15),
     "REFRESH_TOKEN_LIFETIME": timedelta(days=7),
     "ROTATE_REFRESH_TOKENS": True,
@@ -44,9 +53,11 @@ SIMPLE_JWT = {
 }
 
 INSTALLED_APPS = [
-    'core',
+    "core.apps.CoreConfig",
+    
     'rest_framework',
     'rest_framework_simplejwt.token_blacklist',
+    'rest_framework.authtoken',
     'corsheaders',
     'django.contrib.admin',
     'django.contrib.auth',
@@ -54,6 +65,8 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'imagekit',
+    'djoser'
 ]
 
 MIDDLEWARE = [
@@ -87,9 +100,13 @@ TEMPLATES = [
 WSGI_APPLICATION = 'social_network.wsgi.application'
 
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+    "default": {
+        "ENGINE": "django.db.backends.postgresql",
+        "NAME": os.environ["POSTGRES_DB"],
+        "USER": os.environ["POSTGRES_USER"],
+        "PASSWORD": os.environ["POSTGRES_PASSWORD"],
+        "HOST": os.environ["POSTGRES_HOST"],
+        "PORT": os.environ["POSTGRES_PORT"],
     }
 }
 

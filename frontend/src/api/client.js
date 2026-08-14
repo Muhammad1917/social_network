@@ -1,145 +1,378 @@
-const BASE_URL = 'http://localhost:8000/api';
 
-class ApiClient {
-  constructor() {
-    this.baseUrl = BASE_URL;
-  }
+// src/api/client.js
 
-  getAccessToken() {
-    return localStorage.getItem('access_token');
-  }
+import axios from "axios";
+import { useAuthStore } from "../store/authStore";
 
-  getRefreshToken() {
-    return localStorage.getItem('refresh_token');
-  }
+/**
+ * ==========================================================
+ * Configuration
+ * ==========================================================
+ */
 
-  setTokens(access, refresh) {
-    localStorage.setItem('access_token', access);
-    localStorage.setItem('refresh_token', refresh);
-  }
+const BASE_URL = "http://127.0.0.1:8000";
 
-  clearTokens() {
-    localStorage.removeItem('access_token');
-    localStorage.removeItem('refresh_token');
-    localStorage.removeItem('user');
-  }
+/**
+ * ==========================================================
+ * Axios Instance
+ * ==========================================================
+ */
 
-  async request(endpoint, options = {}) {
-    const { method = 'GET', body, auth = true, params } = options;
+const api = axios.create({
+    baseURL: BASE_URL,
+    timeout: 10000,
+});
 
-    const headers = {};
-    if (body) {
-      headers['Content-Type'] = 'application/json';
+/**
+ * ==========================================================
+ * Refresh State
+ * ==========================================================
+ */
+const {
+    accessToken,
+    refreshToken,
+    logout,
+    setTokens,
+} = useAuthStore.getState();
+
+let isRefreshing = false;
+
+let refreshSubscribers = [];
+
+/**
+ * Notify waiting requests.
+ */
+const notifySubscribers = (newAccessToken) => {
+    refreshSubscribers.forEach(callback => callback(newAccessToken));
+
+    refreshSubscribers = [];
+};
+
+/**
+ * Add request to queue.
+ */
+const subscribeTokenRefresh = (callback) => {
+    refreshSubscribers.push(callback);
+};
+
+/**
+ * ==========================================================
+ * Request Interceptor
+ * ==========================================================
+ */
+
+api.interceptors.request.use(
+
+    (config) => {
+
+        const requiresAuth =
+            config.requiresAuth ?? true;
+
+        if (requiresAuth) {
+
+            const accessToken =
+                useAuthStore.getState().accessToken;
+
+            if (accessToken) {
+
+                config.headers.Authorization =
+                    `JWT ${accessToken}`;
+                console.log(`acccess is ${accessToken}`)
+            }
+
+        }
+
+        console.groupCollapsed(
+            `[API REQUEST] ${config.method?.toUpperCase()} ${config.url}`
+        );
+
+        console.log("Params:", config.params);
+        console.log("Headers:", config.headers);
+        console.log("Body:", config.data);
+
+        console.groupEnd();
+
+        return config;
+    },
+
+    (error) => {
+
+        console.error("[REQUEST ERROR]", error);
+
+        return Promise.reject(error);
+
     }
-    if (auth) {
-      const token = this.getAccessToken();
-      if (token) {
-        headers['Authorization'] = `Bearer ${token}`;
-      }
+
+);
+
+/**
+ * ==========================================================
+ * Response Interceptor
+ * ==========================================================
+ */
+
+api.interceptors.response.use(
+
+    (response) => {
+
+        console.groupCollapsed(
+            `[API SUCCESS] ${response.config.url}`
+        );
+
+        console.log(response.data);
+
+        console.groupEnd();
+
+        return response;
+
+    },
+
+    async (error) => {
+
+        const originalRequest = error.config;
+
+        if (error.response?.status !== 401) {
+            return Promise.reject(error);
+        }           
+
+        if (originalRequest.requiresAuth === false) {
+            return Promise.reject(error);
+        }
+        if (!accessToken) {
+
+            console.warn(
+                "[JWT] No access token. Rejecting request."
+            );
+
+            return Promise.reject(error);
+
+        }
+        if (!refreshToken) {
+
+            console.warn(
+                "[JWT] Missing refresh token."
+            );
+
+            logout();
+
+            return Promise.reject(error);
+
+        }
+        /**
+         * Prevent infinite retry loop.
+         */
+        if (originalRequest._retry) {
+
+            useAuthStore.getState().logout();
+
+            return Promise.reject(error);
+
+        }
+
+        originalRequest._retry = true;
+
+        /**
+         * Another refresh is already running.
+         */
+        if (isRefreshing) {
+
+            return new Promise((resolve) => {
+
+                subscribeTokenRefresh((token) => {
+
+                    originalRequest.headers.Authorization =
+                        `JWT ${token}`;
+
+                    resolve(api(originalRequest));
+
+                });
+
+            });
+
+        }
+
+        isRefreshing = true;
+
+        try {
+
+            console.log("[JWT] Refreshing access token...");
+
+            const refreshToken =
+                useAuthStore.getState().refreshToken;
+            
+            if (!refreshToken) {
+
+                useAuthStore.getState().logout();
+
+                return Promise.reject(error);
+
+            }
+
+            const response = await axios.post(
+
+                `${BASE_URL}/auth/jwt/refresh/`,
+
+                {
+                    refresh: refreshToken,
+                }
+
+            );
+
+            const newAccess =
+                response.data.access;
+
+            useAuthStore.getState().setTokens({
+
+                access: newAccess,
+
+                refresh: refreshToken,
+
+            });
+
+            notifySubscribers(newAccess);
+
+            originalRequest.headers.Authorization =
+                `JWT ${newAccess}`;
+
+            return api(originalRequest);
+
+        }
+
+        catch (refreshError) {
+
+            console.error(
+                "[JWT] Refresh failed."
+            );
+
+            /**
+             * Only logout if refresh endpoint
+             * actually rejects the refresh token.
+             */
+
+            if (refreshError.response?.status === 401) {
+
+                logout();
+
+            }
+
+            return Promise.reject(refreshError);
+
+        }
+
+        finally {
+
+            isRefreshing = false;
+
+        }
+
     }
 
-    let url = `${this.baseUrl}${endpoint}`;
-    if (params) {
-      const searchParams = new URLSearchParams(params);
-      url += `?${searchParams}`;
-    }
+);
 
-    const config = { method, headers };
-    if (body) {
-      config.body = JSON.stringify(body);
-    }
+/**
+ * ==========================================================
+ * Generic Request
+ * ==========================================================
+ */
 
-    let response = await fetch(url, config);
+const request = async (
 
-    if (response.status === 401 && auth) {
-      const refreshed = await this.tryRefresh();
-      if (refreshed) {
-        headers['Authorization'] = `Bearer ${this.getAccessToken()}`;
-        response = await fetch(url, config);
-      }
-    }
+    endpoint,
 
-    const data = await response.json();
-    if (!response.ok) {
-      const detail = data.detail || Object.values(data).flat().join(', ') || 'Request failed';
-      throw new Error(detail);
-    }
-    return data;
-  }
+    {
+        method = "GET",
 
-  async tryRefresh() {
-    const refresh = this.getRefreshToken();
-    if (!refresh) return false;
-    try {
-      const res = await fetch(`${this.baseUrl}/auth/token/refresh/`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ refresh }),
-      });
-      if (!res.ok) {
-        this.clearTokens();
-        return false;
-      }
-      const data = await res.json();
-      this.setTokens(data.access, data.refresh || refresh);
-      return true;
-    } catch {
-      this.clearTokens();
-      return false;
-    }
-  }
+        data,
 
-  register(email, username, password) {
-    return this.request('/auth/register/', {
-      method: 'POST',
-      auth: false,
-      body: { email, username, password },
+        params,
+
+        headers = {},
+
+        timeout,
+
+        responseType,
+
+        requiresAuth = true,
+
+    } = {}
+
+) => {
+
+    const response = await api({
+
+        url: endpoint,
+
+        method,
+
+        data,
+
+        params,
+
+        headers,
+
+        timeout,
+
+        responseType,
+
+        requiresAuth,
+
     });
-  }
 
-  login(email, password) {
-    return this.request('/auth/login/', {
-      method: 'POST',
-      auth: false,
-      body: { email, password },
+    return response.data;
+
+};
+
+/**
+ * ==========================================================
+ * Helpers
+ * ==========================================================
+ */
+
+const get = (endpoint, options = {}) =>
+    request(endpoint, {
+        method: "GET",
+        ...options,
     });
-  }
 
-  logout(refreshToken) {
-    return this.request('/auth/logout/', {
-      method: 'POST',
-      body: { refresh: refreshToken },
+const post = (endpoint, data, options = {}) =>
+    request(endpoint, {
+        method: "POST",
+        data,
+        ...options,
     });
-  }
 
-  getMe() {
-    return this.request('/auth/me/');
-  }
-
-  verifyEmail(token) {
-    return this.request('/auth/verify-email/', {
-      method: 'POST',
-      auth: false,
-      body: { token },
+const put = (endpoint, data, options = {}) =>
+    request(endpoint, {
+        method: "PUT",
+        data,
+        ...options,
     });
-  }
 
-  passwordReset(email) {
-    return this.request('/auth/password-reset/', {
-      method: 'POST',
-      auth: false,
-      body: { email },
+const patch = (endpoint, data, options = {}) =>
+    request(endpoint, {
+        method: "PATCH",
+        data,
+        ...options,
     });
-  }
 
-  passwordResetConfirm(uid, token, newPassword) {
-    return this.request('/auth/password-reset/confirm/', {
-      method: 'POST',
-      auth: false,
-      body: { uid, token, new_password: newPassword },
+const remove = (endpoint, options = {}) =>
+    request(endpoint, {
+        method: "DELETE",
+        ...options,
     });
-  }
-}
 
-const api = new ApiClient();
-export default api;
+export default {
+
+    request,
+
+    get,
+
+    post,
+
+    put,
+
+    patch,
+
+    delete: remove,
+
+};

@@ -1,17 +1,109 @@
-from django.contrib.auth.tokens import default_token_generator
-from django.utils import timezone
-from django.utils.http import urlsafe_base64_encode
-from django.utils.encoding import force_bytes
-from rest_framework import status
-from rest_framework.permissions import AllowAny, IsAuthenticated
-from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework.response import Response
 
-def CurrentUserProfileView(APIView) :
-    Profile = ProfileSerializer()
+from rest_framework.permissions import (
+    IsAuthenticated,
+    AllowAny
+)
 
-def UserProfileDetailView(APIView) : 
-    pass 
+from core.serializers.profile import (
+    ProfileSerializer,
+    ProfileUpdateSerializer
+)
 
-def UserProfileUpdateView(APIView) : 
-    pass
+from core.models import Profile
+
+
+class MyProfileView(APIView):
+
+    permission_classes=[
+        IsAuthenticated
+    ]
+
+
+    def get(
+        self,
+        request
+    ):
+
+        profile=request.user.profile
+
+
+        serializer=ProfileSerializer(
+            profile,
+            context={
+                "request":request
+            }
+        )
+
+
+        return Response(
+            serializer.data
+        )
+
+
+
+    def patch(
+        self,
+        request
+    ):
+
+        profile=request.user.profile
+
+
+        serializer=ProfileUpdateSerializer(
+            profile,
+            data=request.data,
+            partial=True
+        )
+
+
+        serializer.is_valid(
+            raise_exception=True
+        )
+
+
+        serializer.save()
+
+
+        return Response(
+            ProfileSerializer(
+                profile,
+                context={
+                    "request":request
+                }
+            ).data
+        )
+
+
+class PublicProfileView(APIView):
+
+    permission_classes=[
+        AllowAny
+    ]
+
+
+    def get(
+        self,
+        request,
+        username
+    ):
+
+        profile=Profile.objects.select_related(
+            "user"
+        ).get(
+            user__username=username
+        )
+
+
+        serializer=ProfileSerializer(
+            profile,
+            context={
+                "request":request
+            }
+        )
+
+
+        return Response(
+            serializer.data
+        )
